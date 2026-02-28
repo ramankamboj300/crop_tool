@@ -324,7 +324,6 @@
             const ratio = w / h;
             ui.ratioDisplay.textContent = `${w/gcd(w,h)}:${h/gcd(w,h)} RATIO`;
             
-            // LIVE UPDATE: Change cropper ratio instantly
             if (cropper) {
                 cropper.setAspectRatio(ratio);
             }
@@ -512,7 +511,6 @@
 
         ui.resetCropBtn.addEventListener('click', () => cropper && cropper.reset());
 
-        // Event listeners for REAL-TIME dimension updates
         [ui.targetWidth, ui.targetHeight].forEach(el => {
             el.addEventListener('input', () => {
                 updateRatioInfo();
