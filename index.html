@@ -23,9 +23,9 @@
         #live-logo-preview {
             position: absolute;
             pointer-events: none;
-            z-index: 10;
-            transition: opacity 0.3s ease;
+            z-index: 50; /* Increased z-index */
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+            display: block !important;
         }
         .glass-morphism {
             background: rgba(255, 255, 255, 0.98);
@@ -54,7 +54,7 @@
     <div class="max-w-xl mx-auto py-6 px-4 pb-24">
         <header class="text-center mb-8">
             <h1 class="text-3xl font-black text-slate-900 mb-1 tracking-tight">SmartCrop <span class="text-blue-600">Pro</span></h1>
-            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.25em]">Stable Version 2.0</p>
+            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.25em]">Stable Version 2.1</p>
         </header>
 
         <div id="mainSection">
@@ -89,12 +89,13 @@
 
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-400">01. Frame Settings</h2>
-                    <span id="ratioDisplay" class="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold uppercase">9:16 Preview</span>
+                    <span id="ratioDisplay" class="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold uppercase">1440:2569 Preview</span>
                 </div>
 
                 <div class="crop-area-wrapper rounded-2xl mb-6 relative shadow-inner border border-slate-200" id="cropWrapper">
                     <img id="image-to-crop" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000" class="opacity-40">
-                    <img id="live-logo-preview" src="" alt="logo preview">
+                    <!-- Added inline styles to ensure visibility -->
+                    <img id="live-logo-preview" src="" style="display:none;" alt="logo preview">
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3 mb-6">
@@ -169,8 +170,13 @@
         let selectedLogoMode = 'auto'; 
         
         const logoUrl = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg1edao5rDgs_ghf8tGxg6k9pId-JtXvKk1cS74LOjykj6F2rtq47nT-aUL3ChsITB_x8SXGpKG-pck25IOE_vNc_0BPTupQ26iJSnz9GGGOYZD_TrXHKKVmplbAOr_9O_aoRJEM8qaicG9-oU8JRL_0qpcsncCzK4SIbOUTIIW2uf2x4m0UieJrlIXYL6u/s1600/ChatGPT%20Image%20Feb%2028,%202026,%2007_42_18%20PM.png";
+        
         const logoImg = new Image();
         logoImg.crossOrigin = "anonymous";
+        
+        // Error handling for logo loading
+        logoImg.onload = () => { console.log("Logo Loaded successfully"); updateLivePreview(); };
+        logoImg.onerror = () => { console.error("Logo failed to load"); };
         logoImg.src = logoUrl;
 
         const ui = {
@@ -213,12 +219,15 @@
             ui.sizeValDisplay.textContent = `${scale}%`;
             const pos = ui.logoPos.value;
             
+            // Ensure image is visible
             ui.liveLogo.src = logoUrl;
+            ui.liveLogo.style.display = 'block';
             ui.liveLogo.style.width = `${scale}%`;
             
-            if (selectedLogoMode === 'white') ui.liveLogo.style.filter = 'brightness(0) invert(1)';
-            else if (selectedLogoMode === 'black') ui.liveLogo.style.filter = 'brightness(0)';
-            else ui.liveLogo.style.filter = 'none';
+            // Filters
+            if (selectedLogoMode === 'white') ui.liveLogo.style.filter = 'brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+            else if (selectedLogoMode === 'black') ui.liveLogo.style.filter = 'brightness(0) drop-shadow(0 2px 4px rgba(255,255,255,0.1))';
+            else ui.liveLogo.style.filter = 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))';
 
             ui.liveLogo.style.top = 'auto'; ui.liveLogo.style.bottom = 'auto';
             ui.liveLogo.style.left = 'auto'; ui.liveLogo.style.right = 'auto';
@@ -274,10 +283,7 @@
             const tw = Math.max(100, parseInt(ui.targetWidth.value) || 1440);
             const th = Math.max(100, parseInt(ui.targetHeight.value) || 2569);
             
-            // Critical fix: Ensure canvas has dimensions before drawing
-            if (!croppedCanvas || croppedCanvas.width === 0 || croppedCanvas.height === 0) {
-                throw new Error("Invalid cropped canvas dimensions");
-            }
+            if (!croppedCanvas || croppedCanvas.width === 0) throw new Error("Canvas Error");
 
             ui.wmCanvas.width = tw; 
             ui.wmCanvas.height = th;
@@ -286,7 +292,15 @@
             ctx.clearRect(0,0,tw,th);
             ctx.drawImage(croppedCanvas, 0, 0, tw, th);
 
-            if (logoImg.complete && logoImg.naturalWidth > 0) {
+            // Wait for logo if not loaded
+            if (!logoImg.complete || logoImg.naturalWidth === 0) {
+                await new Promise(r => {
+                    logoImg.onload = r;
+                    logoImg.onerror = r;
+                });
+            }
+
+            if (logoImg.naturalWidth > 0) {
                 const scale = parseInt(ui.logoSizeScale.value) / 100;
                 const logoW = tw * scale;
                 const fh = (logoW / logoImg.naturalWidth) * logoImg.naturalHeight;
@@ -301,19 +315,18 @@
                 else if (pos === 'top-left') { x = mx; y = my; }
                 else { x = (tw - logoW) / 2; y = (th - fh) / 2; }
 
-                // Create offscreen for logo styling
-                const logoCanvas = document.createElement('canvas');
-                logoCanvas.width = logoImg.naturalWidth;
-                logoCanvas.height = logoImg.naturalHeight;
-                const lCtx = logoCanvas.getContext('2d');
+                const logoOffscreen = document.createElement('canvas');
+                logoOffscreen.width = logoImg.naturalWidth;
+                logoOffscreen.height = logoImg.naturalHeight;
+                const lCtx = logoOffscreen.getContext('2d');
                 lCtx.drawImage(logoImg, 0, 0);
 
                 if (selectedLogoMode === 'white' || selectedLogoMode === 'black') {
                     lCtx.globalCompositeOperation = 'source-in';
                     lCtx.fillStyle = selectedLogoMode === 'white' ? '#ffffff' : '#000000';
-                    lCtx.fillRect(0, 0, logoCanvas.width, logoCanvas.height);
+                    lCtx.fillRect(0, 0, logoOffscreen.width, logoOffscreen.height);
                 }
-                ctx.drawImage(logoCanvas, x, y, logoW, fh);
+                ctx.drawImage(logoOffscreen, x, y, logoW, fh);
             }
             return new Promise(r => ui.wmCanvas.toBlob(b => r(b), 'image/jpeg', 0.95));
         }
@@ -390,7 +403,10 @@
             });
         });
 
-        window.onload = updateLivePreview;
+        // Trigger initial preview load
+        window.addEventListener('load', () => {
+            setTimeout(updateLivePreview, 500);
+        });
     </script>
 </body>
 </html>
