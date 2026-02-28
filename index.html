@@ -9,6 +9,10 @@
     <!-- Cropper.js CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
+        html, body {
+            overscroll-behavior-y: contain;
+        }
+
         .crop-area-wrapper {
             height: 420px;
             width: 100%;
@@ -31,7 +35,6 @@
             max-height: 100%;
         }
 
-        /* Live Logo Preview Overlay */
         #live-logo-preview {
             position: absolute;
             pointer-events: none;
@@ -55,12 +58,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .cropper-view-box, .cropper-face {
-            outline: 3px solid #3b82f6;
-            outline-color: rgba(59, 130, 246, 0.9);
-            border-radius: 4px;
-        }
-
         .setting-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -68,8 +65,29 @@
             border-radius: 16px;
         }
 
-        input[type=range] {
-            accent-color: #2563eb;
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid #fff;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -78,47 +96,88 @@
     <div class="max-w-xl mx-auto py-6 px-4 pb-24 md:py-10">
         <header class="text-center mb-8">
             <h1 class="text-3xl font-black text-slate-900 mb-1 tracking-tight">SmartCrop <span class="text-blue-600">Pro</span></h1>
-            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.25em]">Precision Branding & Preview</p>
+            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.25em]">Batch Processing & Queue Management</p>
         </header>
 
-        <!-- Configuration & Live Preview Section -->
         <div id="mainSection" class="fade-in">
             <div class="glass-morphism p-6 rounded-[2rem] shadow-2xl mb-4 border border-white">
                 
-                <!-- 01. Live Preview Screen -->
+                <div class="mb-6">
+                    <!-- Top Action Area -->
+                    <div class="flex gap-2 mb-4">
+                        <div class="relative flex-1">
+                            <input type="file" id="fileInput" multiple accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                            <button class="w-full border-2 border-dashed border-slate-200 rounded-2xl py-3 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all flex items-center justify-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
+                                <span class="text-slate-900 font-black text-xs uppercase">Add Images</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Image Queue List -->
+                    <div id="queueContainer" class="hidden mb-4">
+                        <h3 class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Pending Queue</h3>
+                        <div id="imageList" class="flex flex-col gap-2 max-h-32 overflow-y-auto custom-scroll pr-2"></div>
+                        <div class="w-full h-[1px] bg-slate-100 mt-4"></div>
+                    </div>
+
+                    <!-- Crop Controls -->
+                    <div id="cropControls" class="hidden">
+                        <div class="flex justify-between items-center mb-3">
+                            <span id="imageCounter" class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Photo 1 / 1</span>
+                            <span id="currentImageName" class="text-[10px] text-slate-400 truncate max-w-[150px] font-medium italic">filename.jpg</span>
+                        </div>
+                        
+                        <div class="flex gap-2 mb-3">
+                            <button id="prevBtn" class="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black text-sm hover:bg-black active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-1 uppercase">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7" /></svg>
+                                <span>Back</span>
+                            </button>
+                            <button id="nextCropBtn" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-sm hover:bg-blue-700 active:scale-[0.98] transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-2 uppercase">
+                                <span id="nextBtnText">Save & Next</span>
+                                <div id="loader" class="hidden spinner"></div>
+                                <svg id="nextIcon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="skipBtn" class="py-2 bg-slate-50 text-slate-500 font-bold rounded-lg text-[9px] uppercase tracking-widest border border-slate-100">Skip</button>
+                            <button id="resetCropBtn" class="py-2 bg-slate-50 text-slate-500 font-bold rounded-lg text-[9px] uppercase tracking-widest border border-slate-100">Reset</button>
+                        </div>
+                        <div class="w-full h-[1px] bg-slate-100 my-4"></div>
+                    </div>
+                </div>
+
+                <!-- 01. Preview -->
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-400">01. Live Configuration</h2>
+                    <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-400">01. Adjust Frame</h2>
                     <span id="ratioDisplay" class="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold uppercase">9:16 Preview</span>
                 </div>
 
                 <div class="crop-area-wrapper rounded-2xl mb-6 relative shadow-inner border border-slate-200" id="cropWrapper">
-                    <!-- Default Background -->
                     <img id="image-to-crop" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1440&h=2560&auto=format&fit=crop" class="opacity-40">
-                    <!-- Live Logo Preview -->
                     <img id="live-logo-preview" src="" alt="logo preview">
                 </div>
                 
-                <!-- Dimensions -->
+                <!-- Settings -->
                 <div class="grid grid-cols-2 gap-3 mb-6">
                     <div class="setting-card">
-                        <label class="block text-[9px] font-bold text-slate-400 mb-1 uppercase">Width</label>
-                        <input type="number" id="targetWidth" value="1440" class="w-full bg-transparent font-black text-lg outline-none" oninput="updateRatioInfo()">
+                        <label class="block text-[9px] font-bold text-slate-400 mb-1 uppercase">Width (px)</label>
+                        <input type="number" id="targetWidth" value="1440" class="w-full bg-transparent font-black text-lg outline-none">
                     </div>
                     <div class="setting-card">
-                        <label class="block text-[9px] font-bold text-slate-400 mb-1 uppercase">Height</label>
-                        <input type="number" id="targetHeight" value="2560" class="w-full bg-transparent font-black text-lg outline-none" oninput="updateRatioInfo()">
+                        <label class="block text-[9px] font-bold text-slate-400 mb-1 uppercase">Height (px)</label>
+                        <input type="number" id="targetHeight" value="2560" class="w-full bg-transparent font-black text-lg outline-none">
                     </div>
                 </div>
 
-                <!-- Branding Settings -->
-                <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">02. Branding Settings</h2>
-                <div class="grid grid-cols-1 gap-3 mb-6">
+                <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">02. Logo Style</h2>
+                <div class="grid grid-cols-1 gap-3">
                     <div class="setting-card">
-                        <label class="block text-[9px] font-bold text-slate-400 mb-2 uppercase">Logo Variant</label>
                         <div class="flex gap-2">
-                            <button onclick="setLogoStyle('auto')" id="btn-auto" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-blue-600 bg-blue-50 text-blue-600 transition-all uppercase tracking-tight">Standard</button>
-                            <button onclick="setLogoStyle('white')" id="btn-white" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-transparent bg-slate-100 text-slate-500 transition-all uppercase tracking-tight">White Mode</button>
-                            <button onclick="setLogoStyle('black')" id="btn-black" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-transparent bg-slate-100 text-slate-500 transition-all uppercase tracking-tight">Black Mode</button>
+                            <button onclick="setLogoStyle('auto')" id="btn-auto" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-blue-600 bg-blue-50 text-blue-600 transition-all uppercase">Original</button>
+                            <button onclick="setLogoStyle('white')" id="btn-white" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-transparent bg-slate-100 text-slate-500 transition-all uppercase">White</button>
+                            <button onclick="setLogoStyle('black')" id="btn-black" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-transparent bg-slate-100 text-slate-500 transition-all uppercase">Black</button>
                         </div>
                     </div>
 
@@ -127,13 +186,13 @@
                             <label class="block text-[9px] font-bold text-slate-400 uppercase">Logo Size</label>
                             <span id="sizeValDisplay" class="text-[10px] font-black text-blue-600">17%</span>
                         </div>
-                        <input type="range" id="logoSizeScale" min="5" max="50" value="17" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" oninput="updateLivePreview()">
+                        <input type="range" id="logoSizeScale" min="5" max="50" value="17" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                     </div>
 
                     <div class="setting-card">
-                        <label class="block text-[9px] font-bold text-slate-400 mb-2 uppercase">Position & Padding</label>
+                        <label class="block text-[9px] font-bold text-slate-400 mb-2 uppercase">Position & Gap</label>
                         <div class="grid grid-cols-2 gap-2">
-                            <select id="logoPos" class="bg-white border border-slate-200 rounded-lg py-2 px-3 text-[11px] font-bold outline-none" onchange="updateLivePreview()">
+                            <select id="logoPos" class="bg-white border border-slate-200 rounded-lg py-2 px-3 text-[11px] font-bold outline-none">
                                 <option value="bottom-right" selected>Bottom Right</option>
                                 <option value="bottom-left">Bottom Left</option>
                                 <option value="top-right">Top Right</option>
@@ -141,65 +200,28 @@
                                 <option value="center">Center</option>
                             </select>
                             <div class="flex items-center bg-white border border-slate-200 rounded-lg px-3">
-                                <span class="text-[9px] font-bold text-slate-400 mr-2">GAP:</span>
-                                <input type="number" id="logoPadding" value="0" class="w-full text-[11px] font-bold outline-none" min="0" max="25" oninput="updateLivePreview()">
-                                <span class="text-[9px] font-bold text-slate-400 ml-1">%</span>
+                                <input type="number" id="logoPadding" value="0" class="w-full text-[11px] font-bold outline-none" min="0" max="25">
+                                <span class="text-[9px] font-bold text-slate-400 ml-1">% GAP</span>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Upload CTA -->
-                <div id="uploadArea" class="relative group">
-                    <input type="file" id="fileInput" multiple accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                    <div class="border-2 border-dashed border-slate-200 rounded-[2rem] p-10 bg-white group-hover:bg-blue-50 group-hover:border-blue-300 transition-all flex flex-col items-center justify-center text-center">
-                        <div class="w-14 h-14 bg-blue-600 rounded-2xl shadow-xl shadow-blue-200 flex items-center justify-center mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                        </div>
-                        <span class="text-slate-900 font-black text-md">Apply to Images</span>
-                        <p class="text-slate-400 text-[10px] mt-1 font-bold uppercase">Select one or more photos</p>
-                    </div>
-                </div>
 
-                <!-- Active Crop Controls -->
-                <div id="cropControls" class="hidden pt-4 border-t border-slate-100">
-                    <div class="flex justify-between items-center mb-4">
-                        <span id="imageCounter" class="text-[10px] font-black text-blue-600 uppercase tracking-widest">IMAGE 1 / 1</span>
-                        <span id="currentImageName" class="text-[10px] text-slate-400 truncate max-w-[150px] font-medium italic">photo.jpg</span>
-                    </div>
-                    
-                    <div class="flex gap-3 mb-3">
-                        <button id="prevBtn" class="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-lg hover:bg-black active:scale-[0.98] transition-all shadow-xl flex items-center justify-center gap-2 uppercase opacity-50 cursor-not-allowed" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7" /></svg>
-                            <span>Back</span>
-                        </button>
-                        <button id="nextCropBtn" class="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-blue-700 active:scale-[0.98] transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-2 uppercase">
-                            <span>Save & Next</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7" /></svg>
-                        </button>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <button id="skipBtn" class="py-3 bg-slate-50 text-slate-500 font-bold rounded-xl text-[10px] uppercase tracking-widest border border-slate-100">Skip Image</button>
-                        <button id="resetCropBtn" class="py-3 bg-slate-50 text-slate-500 font-bold rounded-xl text-[10px] uppercase tracking-widest border border-slate-100">Reset Crop</button>
-                    </div>
-                    <button onclick="location.reload()" class="w-full mt-4 text-red-400 font-black text-[9px] uppercase tracking-widest">Cancel Batch</button>
+                    <button onclick="location.reload()" class="w-full mt-4 text-red-400 font-black text-[9px] uppercase tracking-widest text-center">Reset All</button>
                 </div>
             </div>
         </div>
 
-        <!-- Result Section -->
         <div id="resultSection" class="hidden fade-in">
             <div class="glass-morphism p-10 rounded-[2.5rem] shadow-2xl border border-white text-center">
-                <div class="w-16 h-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-emerald-100">
+                <div class="w-16 h-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
                 </div>
-                <h3 class="text-2xl font-black text-slate-900 mb-2">Branding Complete!</h3>
-                <p id="processedCount" class="text-slate-500 font-medium mb-8 text-sm italic">Images processed successfully.</p>
-                <button id="downloadBtn" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-black active:scale-[0.98] transition-all shadow-2xl flex items-center justify-center gap-4 mb-4">
-                    <span id="downloadBtnText">Download Files</span>
+                <h3 class="text-2xl font-black text-slate-900 mb-2">Done!</h3>
+                <p id="processedCount" class="text-slate-500 font-medium mb-8 text-sm italic">Files are ready.</p>
+                <button id="downloadBtn" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-black transition-all shadow-2xl flex items-center justify-center gap-4 mb-4">
+                    <span id="downloadBtnText">Download Zip</span>
                 </button>
-                <button onclick="location.reload()" class="w-full py-3 text-blue-600 font-black text-[10px] uppercase tracking-widest">Process More</button>
+                <button onclick="location.reload()" class="w-full py-3 text-blue-600 font-black text-[10px] uppercase tracking-widest">New Batch</button>
             </div>
         </div>
 
@@ -214,27 +236,29 @@
         let selectedFiles = [];
         let currentIndex = 0;
         let cropper = null;
-        let croppedImagesBlobs = []; // Array of {blob, fileName, originalIndex}
-        let isBatchActive = false;
+        let croppedImagesBlobs = [];
         let selectedLogoMode = 'auto'; 
         
         const logoUrl = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg1edao5rDgs_ghf8tGxg6k9pId-JtXvKk1cS74LOjykj6F2rtq47nT-aUL3ChsITB_x8SXGpKG-pck25IOE_vNc_0BPTupQ26iJSnz9GGGOYZD_TrXHKKVmplbAOr_9O_aoRJEM8qaicG9-oU8JRL_0qpcsncCzK4SIbOUTIIW2uf2x4m0UieJrlIXYL6u/s1600/ChatGPT%20Image%20Feb%2028,%202026,%2007_42_18%20PM.png";
-
         const logoImg = new Image();
         logoImg.crossOrigin = "anonymous";
         logoImg.src = logoUrl;
 
         const ui = {
             mainSection: document.getElementById('mainSection'),
-            uploadArea: document.getElementById('uploadArea'),
             cropControls: document.getElementById('cropControls'),
             resultSection: document.getElementById('resultSection'),
             fileInput: document.getElementById('fileInput'),
+            queueContainer: document.getElementById('queueContainer'),
+            imageList: document.getElementById('imageList'),
             imageToCrop: document.getElementById('image-to-crop'),
             liveLogo: document.getElementById('live-logo-preview'),
             logoSizeScale: document.getElementById('logoSizeScale'),
             sizeValDisplay: document.getElementById('sizeValDisplay'),
             nextCropBtn: document.getElementById('nextCropBtn'),
+            nextBtnText: document.getElementById('nextBtnText'),
+            loader: document.getElementById('loader'),
+            nextIcon: document.getElementById('nextIcon'),
             prevBtn: document.getElementById('prevBtn'),
             skipBtn: document.getElementById('skipBtn'),
             resetCropBtn: document.getElementById('resetCropBtn'),
@@ -264,7 +288,6 @@
         function updateLivePreview() {
             const scale = parseInt(ui.logoSizeScale.value);
             ui.sizeValDisplay.textContent = `${scale}%`;
-            
             const pos = ui.logoPos.value;
             const pad = parseInt(ui.logoPadding.value);
             
@@ -298,45 +321,97 @@
         function updateRatioInfo() {
             const w = Math.max(1, parseInt(ui.targetWidth.value) || 1);
             const h = Math.max(1, parseInt(ui.targetHeight.value) || 1);
+            const ratio = w / h;
             ui.ratioDisplay.textContent = `${w/gcd(w,h)}:${h/gcd(w,h)} RATIO`;
-            if (cropper) cropper.setAspectRatio(w/h);
+            
+            // LIVE UPDATE: Change cropper ratio instantly
+            if (cropper) {
+                cropper.setAspectRatio(ratio);
+            }
         }
 
         ui.fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                selectedFiles = Array.from(e.target.files);
-                currentIndex = 0;
-                croppedImagesBlobs = [];
-                isBatchActive = true;
-                ui.uploadArea.classList.add('hidden');
+                const newFiles = Array.from(e.target.files);
+                selectedFiles = [...selectedFiles, ...newFiles];
+                ui.queueContainer.classList.remove('hidden');
                 ui.cropControls.classList.remove('hidden');
                 ui.imageToCrop.classList.remove('opacity-40');
-                loadCurrentImage();
+                renderQueue();
+                if (!cropper) loadCurrentImage();
                 ui.fileInput.value = '';
             }
         });
 
-        function loadCurrentImage() {
-            if (currentIndex >= selectedFiles.length) { finishCropping(); return; }
-            
-            // Handle back button state
-            if (currentIndex > 0) {
-                ui.prevBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                ui.prevBtn.disabled = false;
+        function renderQueue() {
+            ui.imageList.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                const isActive = index === currentIndex;
+                item.className = `flex justify-between items-center p-2 rounded-lg border ${isActive ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100'}`;
+                
+                item.innerHTML = `
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <span class="text-[9px] font-black ${isActive ? 'text-blue-600' : 'text-slate-300'} w-4">${index + 1}</span>
+                        <span class="text-[11px] font-bold text-slate-700 truncate">${file.name}</span>
+                        ${isActive ? '<span class="text-[8px] bg-blue-600 text-white px-1 rounded font-black uppercase">Active</span>' : ''}
+                    </div>
+                    <button onclick="removeImage(${index})" class="text-slate-400 hover:text-red-500 p-1 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                `;
+                ui.imageList.appendChild(item);
+            });
+            ui.imageCounter.textContent = `Photo ${currentIndex + 1} / ${selectedFiles.length}`;
+        }
+
+        window.removeImage = (index) => {
+            if (index === currentIndex) {
+                selectedFiles.splice(index, 1);
+                croppedImagesBlobs = croppedImagesBlobs.filter(i => i.originalIndex !== index);
+                if (currentIndex >= selectedFiles.length) currentIndex = Math.max(0, selectedFiles.length - 1);
+                if (selectedFiles.length > 0) loadCurrentImage();
+                else resetToBlank();
             } else {
-                ui.prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                ui.prevBtn.disabled = true;
+                selectedFiles.splice(index, 1);
+                if (index < currentIndex) currentIndex--;
             }
+            renderQueue();
+        };
+
+        function resetToBlank() {
+            if (cropper) cropper.destroy();
+            cropper = null;
+            ui.imageToCrop.src = "";
+            ui.imageToCrop.classList.add('opacity-40');
+            ui.cropControls.classList.add('hidden');
+            ui.queueContainer.classList.add('hidden');
+            ui.currentImageName.textContent = "No image selected";
+        }
+
+        function loadCurrentImage() {
+            if (currentIndex >= selectedFiles.length) { 
+                if (selectedFiles.length > 0) finishCropping(); 
+                else resetToBlank();
+                return; 
+            }
+            
+            ui.prevBtn.disabled = currentIndex === 0;
+            ui.prevBtn.classList.toggle('opacity-50', currentIndex === 0);
 
             const reader = new FileReader();
             ui.currentImageName.textContent = selectedFiles[currentIndex].name;
-            ui.imageCounter.textContent = `IMAGE ${currentIndex + 1} / ${selectedFiles.length}`;
+            renderQueue();
+            
             reader.onload = (e) => {
                 ui.imageToCrop.src = e.target.result;
                 if (cropper) cropper.destroy();
                 cropper = new Cropper(ui.imageToCrop, {
                     aspectRatio: parseInt(ui.targetWidth.value) / parseInt(ui.targetHeight.value),
-                    viewMode: 1, autoCropArea: 1, dragMode: 'move',
+                    viewMode: 1, 
+                    autoCropArea: 1, 
+                    dragMode: 'move',
+                    background: false,
                     ready() { updateLivePreview(); }
                 });
             };
@@ -348,6 +423,8 @@
             const tw = parseInt(ui.targetWidth.value);
             const th = parseInt(ui.targetHeight.value);
             ui.wmCanvas.width = tw; ui.wmCanvas.height = th;
+            
+            ctx.clearRect(0,0,tw,th);
             ctx.drawImage(croppedCanvas, 0, 0, tw, th);
 
             const scale = parseInt(ui.logoSizeScale.value) / 100;
@@ -381,28 +458,44 @@
                     tCtx.fillStyle = '#000000';
                     tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
                 }
-
                 ctx.drawImage(tempCanvas, x, y, logoW, fh);
             }
-            return new Promise(r => ui.wmCanvas.toBlob(b => r(b), 'image/jpeg', 0.92));
+            return new Promise(r => ui.wmCanvas.toBlob(b => r(b), 'image/jpeg', 0.95));
         }
 
         ui.nextCropBtn.addEventListener('click', async () => {
-            if (!cropper) return;
-            const canvas = cropper.getCroppedCanvas({ width: parseInt(ui.targetWidth.value), height: parseInt(ui.targetHeight.value) });
-            const blob = await processAndSave(canvas);
+            if (!cropper || ui.nextCropBtn.disabled) return;
             
-            // Remove previous entry for this index if exists (for back navigation logic)
-            croppedImagesBlobs = croppedImagesBlobs.filter(i => i.originalIndex !== currentIndex);
-            
-            croppedImagesBlobs.push({ 
-                blob, 
-                fileName: `${selectedFiles[currentIndex].name.split('.')[0]}_branded.jpg`,
-                originalIndex: currentIndex
-            });
-            
-            currentIndex++;
-            loadCurrentImage();
+            ui.nextBtnText.classList.add('hidden');
+            ui.nextIcon.classList.add('hidden');
+            ui.loader.classList.remove('hidden');
+            ui.nextCropBtn.disabled = true;
+
+            try {
+                const canvas = cropper.getCroppedCanvas({ 
+                    width: parseInt(ui.targetWidth.value), 
+                    height: parseInt(ui.targetHeight.value),
+                    imageSmoothingQuality: 'high'
+                });
+                const blob = await processAndSave(canvas);
+                
+                croppedImagesBlobs = croppedImagesBlobs.filter(i => i.originalIndex !== currentIndex);
+                croppedImagesBlobs.push({ 
+                    blob, 
+                    fileName: `${selectedFiles[currentIndex].name.split('.')[0]}_branded.jpg`,
+                    originalIndex: currentIndex
+                });
+                
+                currentIndex++;
+                loadCurrentImage();
+            } catch (err) {
+                console.error(err);
+            } finally {
+                ui.nextBtnText.classList.remove('hidden');
+                ui.nextIcon.classList.remove('hidden');
+                ui.loader.classList.add('hidden');
+                ui.nextCropBtn.disabled = false;
+            }
         });
 
         ui.prevBtn.addEventListener('click', () => {
@@ -413,13 +506,24 @@
         });
 
         ui.skipBtn.addEventListener('click', () => { 
-            // Also remove from saved if we skip a previously saved image
-            croppedImagesBlobs = croppedImagesBlobs.filter(i => i.originalIndex !== currentIndex);
             currentIndex++; 
             loadCurrentImage(); 
         });
 
         ui.resetCropBtn.addEventListener('click', () => cropper && cropper.reset());
+
+        // Event listeners for REAL-TIME dimension updates
+        [ui.targetWidth, ui.targetHeight].forEach(el => {
+            el.addEventListener('input', () => {
+                updateRatioInfo();
+            });
+        });
+
+        [ui.logoSizeScale, ui.logoPos, ui.logoPadding].forEach(el => {
+            el.addEventListener('input', () => {
+                updateLivePreview();
+            });
+        });
 
         function finishCropping() {
             ui.mainSection.classList.add('hidden');
@@ -430,11 +534,13 @@
 
         ui.downloadBtn.addEventListener('click', async () => {
             if (croppedImagesBlobs.length === 0) return;
-            if (croppedImagesBlobs.length === 1) saveAs(croppedImagesBlobs[0].blob, croppedImagesBlobs[0].fileName);
-            else {
+            if (croppedImagesBlobs.length === 1) {
+                saveAs(croppedImagesBlobs[0].blob, croppedImagesBlobs[0].fileName);
+            } else {
                 const zip = new JSZip();
                 croppedImagesBlobs.forEach(i => zip.file(i.fileName, i.blob));
-                saveAs(await zip.generateAsync({ type: "blob" }), `Branded_Batch_${Date.now()}.zip`);
+                const zipBlob = await zip.generateAsync({ type: "blob" });
+                saveAs(zipBlob, `Batch_Export_${Date.now()}.zip`);
             }
         });
 
