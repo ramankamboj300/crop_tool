@@ -4,15 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SmartCrop Pro - Batch Image Cropper</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Cropper.js CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
-        html, body {
-            overscroll-behavior-y: contain;
-        }
-
+        html, body { overscroll-behavior-y: contain; }
         .crop-area-wrapper {
             height: 420px;
             width: 100%;
@@ -23,18 +18,8 @@
             align-items: center;
             justify-content: center;
         }
-
-        .cropper-container {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        #image-to-crop {
-            display: block;
-            max-width: 100%;
-            max-height: 100%;
-        }
-
+        .cropper-container { width: 100% !important; height: 100% !important; }
+        #image-to-crop { display: block; max-width: 100%; max-height: 100%; }
         #live-logo-preview {
             position: absolute;
             pointer-events: none;
@@ -42,40 +27,17 @@
             transition: opacity 0.3s ease;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
         }
-
         .glass-morphism {
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-
-        .fade-in {
-            animation: fadeIn 0.4s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         .setting-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             padding: 12px;
             border-radius: 16px;
         }
-
-        .custom-scroll::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-
         .spinner {
             border: 3px solid rgba(255,255,255,0.3);
             border-radius: 50%;
@@ -84,44 +46,31 @@
             height: 20px;
             animation: spin 1s linear infinite;
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900 selection:bg-blue-100">
 
-    <div class="max-w-xl mx-auto py-6 px-4 pb-24 md:py-10">
+    <div class="max-w-xl mx-auto py-6 px-4 pb-24">
         <header class="text-center mb-8">
             <h1 class="text-3xl font-black text-slate-900 mb-1 tracking-tight">SmartCrop <span class="text-blue-600">Pro</span></h1>
-            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.25em]">Batch Processing & Queue Management</p>
+            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.25em]">Stable Version 2.0</p>
         </header>
 
-        <div id="mainSection" class="fade-in">
+        <div id="mainSection">
             <div class="glass-morphism p-6 rounded-[2rem] shadow-2xl mb-4 border border-white">
                 
                 <div class="mb-6">
-                    <!-- Top Action Area -->
                     <div class="flex gap-2 mb-4">
                         <div class="relative flex-1">
                             <input type="file" id="fileInput" multiple accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                            <button class="w-full border-2 border-dashed border-slate-200 rounded-2xl py-3 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all flex items-center justify-center gap-2">
+                            <button class="w-full border-2 border-dashed border-slate-200 rounded-2xl py-3 bg-white flex items-center justify-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
                                 <span class="text-slate-900 font-black text-xs uppercase">Add Images</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Image Queue List -->
-                    <div id="queueContainer" class="hidden mb-4">
-                        <h3 class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Pending Queue</h3>
-                        <div id="imageList" class="flex flex-col gap-2 max-h-32 overflow-y-auto custom-scroll pr-2"></div>
-                        <div class="w-full h-[1px] bg-slate-100 mt-4"></div>
-                    </div>
-
-                    <!-- Crop Controls -->
                     <div id="cropControls" class="hidden">
                         <div class="flex justify-between items-center mb-3">
                             <span id="imageCounter" class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Photo 1 / 1</span>
@@ -129,55 +78,43 @@
                         </div>
                         
                         <div class="flex gap-2 mb-3">
-                            <button id="prevBtn" class="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black text-sm hover:bg-black active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-1 uppercase">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7" /></svg>
-                                <span>Back</span>
-                            </button>
-                            <button id="nextCropBtn" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-sm hover:bg-blue-700 active:scale-[0.98] transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-2 uppercase">
+                            <button id="prevBtn" class="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black text-sm uppercase flex items-center justify-center gap-1">Back</button>
+                            <button id="nextCropBtn" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-sm shadow-xl flex items-center justify-center gap-2 uppercase">
                                 <span id="nextBtnText">Save & Next</span>
                                 <div id="loader" class="hidden spinner"></div>
-                                <svg id="nextIcon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7" /></svg>
                             </button>
                         </div>
-
-                        <div class="grid grid-cols-2 gap-2">
-                            <button id="skipBtn" class="py-2 bg-slate-50 text-slate-500 font-bold rounded-lg text-[9px] uppercase tracking-widest border border-slate-100">Skip</button>
-                            <button id="resetCropBtn" class="py-2 bg-slate-50 text-slate-500 font-bold rounded-lg text-[9px] uppercase tracking-widest border border-slate-100">Reset</button>
-                        </div>
-                        <div class="w-full h-[1px] bg-slate-100 my-4"></div>
                     </div>
                 </div>
 
-                <!-- 01. Preview -->
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-400">01. Adjust Frame</h2>
+                    <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-400">01. Frame Settings</h2>
                     <span id="ratioDisplay" class="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold uppercase">9:16 Preview</span>
                 </div>
 
                 <div class="crop-area-wrapper rounded-2xl mb-6 relative shadow-inner border border-slate-200" id="cropWrapper">
-                    <img id="image-to-crop" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1440&h=2560&auto=format&fit=crop" class="opacity-40">
+                    <img id="image-to-crop" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000" class="opacity-40">
                     <img id="live-logo-preview" src="" alt="logo preview">
                 </div>
                 
-                <!-- Settings -->
                 <div class="grid grid-cols-2 gap-3 mb-6">
                     <div class="setting-card">
                         <label class="block text-[9px] font-bold text-slate-400 mb-1 uppercase">Width (px)</label>
-                        <input type="number" id="targetWidth" value="1440" class="w-full bg-transparent font-black text-lg outline-none">
+                        <input type="number" id="targetWidth" value="1080" min="100" class="w-full bg-transparent font-black text-lg outline-none">
                     </div>
                     <div class="setting-card">
                         <label class="block text-[9px] font-bold text-slate-400 mb-1 uppercase">Height (px)</label>
-                        <input type="number" id="targetHeight" value="2560" class="w-full bg-transparent font-black text-lg outline-none">
+                        <input type="number" id="targetHeight" value="1920" min="100" class="w-full bg-transparent font-black text-lg outline-none">
                     </div>
                 </div>
 
-                <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">02. Logo Style</h2>
+                <h2 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">02. Branding</h2>
                 <div class="grid grid-cols-1 gap-3">
                     <div class="setting-card">
                         <div class="flex gap-2">
-                            <button onclick="setLogoStyle('auto')" id="btn-auto" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-blue-600 bg-blue-50 text-blue-600 transition-all uppercase">Original</button>
-                            <button onclick="setLogoStyle('white')" id="btn-white" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-transparent bg-slate-100 text-slate-500 transition-all uppercase">White</button>
-                            <button onclick="setLogoStyle('black')" id="btn-black" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-transparent bg-slate-100 text-slate-500 transition-all uppercase">Black</button>
+                            <button onclick="setLogoStyle('auto')" id="btn-auto" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-blue-600 bg-blue-50 text-blue-600 uppercase">Original</button>
+                            <button onclick="setLogoStyle('white')" id="btn-white" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-transparent bg-slate-100 text-slate-500 uppercase">White</button>
+                            <button onclick="setLogoStyle('black')" id="btn-black" class="logo-style-btn flex-1 py-2 rounded-lg text-[10px] font-black border-2 border-transparent bg-slate-100 text-slate-500 uppercase">Black</button>
                         </div>
                     </div>
 
@@ -190,38 +127,30 @@
                     </div>
 
                     <div class="setting-card">
-                        <label class="block text-[9px] font-bold text-slate-400 mb-2 uppercase">Position & Gap</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <select id="logoPos" class="bg-white border border-slate-200 rounded-lg py-2 px-3 text-[11px] font-bold outline-none">
-                                <option value="bottom-right" selected>Bottom Right</option>
-                                <option value="bottom-left">Bottom Left</option>
-                                <option value="top-right">Top Right</option>
-                                <option value="top-left">Top Left</option>
-                                <option value="center">Center</option>
-                            </select>
-                            <div class="flex items-center bg-white border border-slate-200 rounded-lg px-3">
-                                <input type="number" id="logoPadding" value="0" class="w-full text-[11px] font-bold outline-none" min="0" max="25">
-                                <span class="text-[9px] font-bold text-slate-400 ml-1">% GAP</span>
-                            </div>
-                        </div>
+                        <label class="block text-[9px] font-bold text-slate-400 mb-2 uppercase">Logo Position</label>
+                        <select id="logoPos" class="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-[11px] font-bold outline-none">
+                            <option value="bottom-right" selected>Bottom Right</option>
+                            <option value="bottom-left">Bottom Left</option>
+                            <option value="top-right">Top Right</option>
+                            <option value="top-left">Top Left</option>
+                            <option value="center">Center</option>
+                        </select>
                     </div>
-
-                    <button onclick="location.reload()" class="w-full mt-4 text-red-400 font-black text-[9px] uppercase tracking-widest text-center">Reset All</button>
                 </div>
             </div>
         </div>
 
-        <div id="resultSection" class="hidden fade-in">
+        <div id="resultSection" class="hidden">
             <div class="glass-morphism p-10 rounded-[2.5rem] shadow-2xl border border-white text-center">
-                <div class="w-16 h-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+                <div class="w-16 h-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-6">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
                 </div>
-                <h3 class="text-2xl font-black text-slate-900 mb-2">Done!</h3>
-                <p id="processedCount" class="text-slate-500 font-medium mb-8 text-sm italic">Files are ready.</p>
-                <button id="downloadBtn" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-black transition-all shadow-2xl flex items-center justify-center gap-4 mb-4">
+                <h3 class="text-2xl font-black text-slate-900 mb-2">Success!</h3>
+                <p id="processedCount" class="text-slate-500 font-medium mb-8 text-sm italic">0 images ready.</p>
+                <button id="downloadBtn" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg shadow-2xl flex items-center justify-center gap-4">
                     <span id="downloadBtnText">Download Zip</span>
                 </button>
-                <button onclick="location.reload()" class="w-full py-3 text-blue-600 font-black text-[10px] uppercase tracking-widest">New Batch</button>
+                <button onclick="location.reload()" class="w-full py-3 text-blue-600 font-black text-[10px] uppercase mt-4">New Batch</button>
             </div>
         </div>
 
@@ -249,8 +178,6 @@
             cropControls: document.getElementById('cropControls'),
             resultSection: document.getElementById('resultSection'),
             fileInput: document.getElementById('fileInput'),
-            queueContainer: document.getElementById('queueContainer'),
-            imageList: document.getElementById('imageList'),
             imageToCrop: document.getElementById('image-to-crop'),
             liveLogo: document.getElementById('live-logo-preview'),
             logoSizeScale: document.getElementById('logoSizeScale'),
@@ -258,19 +185,15 @@
             nextCropBtn: document.getElementById('nextCropBtn'),
             nextBtnText: document.getElementById('nextBtnText'),
             loader: document.getElementById('loader'),
-            nextIcon: document.getElementById('nextIcon'),
             prevBtn: document.getElementById('prevBtn'),
-            skipBtn: document.getElementById('skipBtn'),
-            resetCropBtn: document.getElementById('resetCropBtn'),
-            downloadBtn: document.getElementById('downloadBtn'),
-            downloadBtnText: document.getElementById('downloadBtnText'),
             targetWidth: document.getElementById('targetWidth'),
             targetHeight: document.getElementById('targetHeight'),
             logoPos: document.getElementById('logoPos'),
-            logoPadding: document.getElementById('logoPadding'),
-            currentImageName: document.getElementById('currentImageName'),
             imageCounter: document.getElementById('imageCounter'),
+            currentImageName: document.getElementById('currentImageName'),
             processedCount: document.getElementById('processedCount'),
+            downloadBtn: document.getElementById('downloadBtn'),
+            downloadBtnText: document.getElementById('downloadBtnText'),
             ratioDisplay: document.getElementById('ratioDisplay'),
             wmCanvas: document.getElementById('watermarkCanvas')
         };
@@ -289,127 +212,57 @@
             const scale = parseInt(ui.logoSizeScale.value);
             ui.sizeValDisplay.textContent = `${scale}%`;
             const pos = ui.logoPos.value;
-            const pad = parseInt(ui.logoPadding.value);
             
             ui.liveLogo.src = logoUrl;
             ui.liveLogo.style.width = `${scale}%`;
             
-            if (selectedLogoMode === 'white') {
-                ui.liveLogo.style.filter = 'brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0,0,0,0.2))';
-            } else if (selectedLogoMode === 'black') {
-                ui.liveLogo.style.filter = 'brightness(0) drop-shadow(0 2px 4px rgba(255,255,255,0.1))';
-            } else {
-                ui.liveLogo.style.filter = 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))';
-            }
+            if (selectedLogoMode === 'white') ui.liveLogo.style.filter = 'brightness(0) invert(1)';
+            else if (selectedLogoMode === 'black') ui.liveLogo.style.filter = 'brightness(0)';
+            else ui.liveLogo.style.filter = 'none';
 
             ui.liveLogo.style.top = 'auto'; ui.liveLogo.style.bottom = 'auto';
             ui.liveLogo.style.left = 'auto'; ui.liveLogo.style.right = 'auto';
             ui.liveLogo.style.transform = 'none';
 
-            if (pos === 'bottom-right') { ui.liveLogo.style.bottom = `${pad}%`; ui.liveLogo.style.right = `${pad}%`; }
-            else if (pos === 'bottom-left') { ui.liveLogo.style.bottom = `${pad}%`; ui.liveLogo.style.left = `${pad}%`; }
-            else if (pos === 'top-right') { ui.liveLogo.style.top = `${pad}%`; ui.liveLogo.style.right = `${pad}%`; }
-            else if (pos === 'top-left') { ui.liveLogo.style.top = `${pad}%`; ui.liveLogo.style.left = `${pad}%`; }
-            else { 
-                ui.liveLogo.style.top = '50%'; ui.liveLogo.style.left = '50%'; 
-                ui.liveLogo.style.transform = 'translate(-50%, -50%)';
-            }
-        }
-
-        function gcd(a, b) { return b ? gcd(b, a % b) : a; }
-
-        function updateRatioInfo() {
-            const w = Math.max(1, parseInt(ui.targetWidth.value) || 1);
-            const h = Math.max(1, parseInt(ui.targetHeight.value) || 1);
-            const ratio = w / h;
-            ui.ratioDisplay.textContent = `${w/gcd(w,h)}:${h/gcd(w,h)} RATIO`;
-            
-            if (cropper) {
-                cropper.setAspectRatio(ratio);
-            }
+            if (pos === 'bottom-right') { ui.liveLogo.style.bottom = '5%'; ui.liveLogo.style.right = '5%'; }
+            else if (pos === 'bottom-left') { ui.liveLogo.style.bottom = '5%'; ui.liveLogo.style.left = '5%'; }
+            else if (pos === 'top-right') { ui.liveLogo.style.top = '5%'; ui.liveLogo.style.right = '5%'; }
+            else if (pos === 'top-left') { ui.liveLogo.style.top = '5%'; ui.liveLogo.style.left = '5%'; }
+            else { ui.liveLogo.style.top = '50%'; ui.liveLogo.style.left = '50%'; ui.liveLogo.style.transform = 'translate(-50%, -50%)'; }
         }
 
         ui.fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                const newFiles = Array.from(e.target.files);
-                selectedFiles = [...selectedFiles, ...newFiles];
-                ui.queueContainer.classList.remove('hidden');
+                selectedFiles = Array.from(e.target.files);
+                currentIndex = 0;
                 ui.cropControls.classList.remove('hidden');
                 ui.imageToCrop.classList.remove('opacity-40');
-                renderQueue();
-                if (!cropper) loadCurrentImage();
-                ui.fileInput.value = '';
+                loadCurrentImage();
             }
         });
 
-        function renderQueue() {
-            ui.imageList.innerHTML = '';
-            selectedFiles.forEach((file, index) => {
-                const item = document.createElement('div');
-                const isActive = index === currentIndex;
-                item.className = `flex justify-between items-center p-2 rounded-lg border ${isActive ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100'}`;
-                
-                item.innerHTML = `
-                    <div class="flex items-center gap-2 overflow-hidden">
-                        <span class="text-[9px] font-black ${isActive ? 'text-blue-600' : 'text-slate-300'} w-4">${index + 1}</span>
-                        <span class="text-[11px] font-bold text-slate-700 truncate">${file.name}</span>
-                        ${isActive ? '<span class="text-[8px] bg-blue-600 text-white px-1 rounded font-black uppercase">Active</span>' : ''}
-                    </div>
-                    <button onclick="removeImage(${index})" class="text-slate-400 hover:text-red-500 p-1 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                `;
-                ui.imageList.appendChild(item);
-            });
-            ui.imageCounter.textContent = `Photo ${currentIndex + 1} / ${selectedFiles.length}`;
-        }
-
-        window.removeImage = (index) => {
-            if (index === currentIndex) {
-                selectedFiles.splice(index, 1);
-                croppedImagesBlobs = croppedImagesBlobs.filter(i => i.originalIndex !== index);
-                if (currentIndex >= selectedFiles.length) currentIndex = Math.max(0, selectedFiles.length - 1);
-                if (selectedFiles.length > 0) loadCurrentImage();
-                else resetToBlank();
-            } else {
-                selectedFiles.splice(index, 1);
-                if (index < currentIndex) currentIndex--;
-            }
-            renderQueue();
-        };
-
-        function resetToBlank() {
-            if (cropper) cropper.destroy();
-            cropper = null;
-            ui.imageToCrop.src = "";
-            ui.imageToCrop.classList.add('opacity-40');
-            ui.cropControls.classList.add('hidden');
-            ui.queueContainer.classList.add('hidden');
-            ui.currentImageName.textContent = "No image selected";
-        }
-
         function loadCurrentImage() {
             if (currentIndex >= selectedFiles.length) { 
-                if (selectedFiles.length > 0) finishCropping(); 
-                else resetToBlank();
+                finishCropping(); 
                 return; 
             }
             
+            ui.imageCounter.textContent = `Photo ${currentIndex + 1} / ${selectedFiles.length}`;
+            ui.currentImageName.textContent = selectedFiles[currentIndex].name;
             ui.prevBtn.disabled = currentIndex === 0;
-            ui.prevBtn.classList.toggle('opacity-50', currentIndex === 0);
 
             const reader = new FileReader();
-            ui.currentImageName.textContent = selectedFiles[currentIndex].name;
-            renderQueue();
-            
             reader.onload = (e) => {
                 ui.imageToCrop.src = e.target.result;
                 if (cropper) cropper.destroy();
+                
+                const w = Math.max(100, parseInt(ui.targetWidth.value) || 1080);
+                const h = Math.max(100, parseInt(ui.targetHeight.value) || 1920);
+
                 cropper = new Cropper(ui.imageToCrop, {
-                    aspectRatio: parseInt(ui.targetWidth.value) / parseInt(ui.targetHeight.value),
-                    viewMode: 1, 
-                    autoCropArea: 1, 
-                    dragMode: 'move',
+                    aspectRatio: w / h,
+                    viewMode: 1,
+                    autoCropArea: 1,
                     background: false,
                     ready() { updateLivePreview(); }
                 });
@@ -418,23 +271,29 @@
         }
 
         async function processAndSave(croppedCanvas) {
-            const ctx = ui.wmCanvas.getContext('2d', { willReadFrequently: true });
-            const tw = parseInt(ui.targetWidth.value);
-            const th = parseInt(ui.targetHeight.value);
-            ui.wmCanvas.width = tw; ui.wmCanvas.height = th;
+            const tw = Math.max(100, parseInt(ui.targetWidth.value) || 1080);
+            const th = Math.max(100, parseInt(ui.targetHeight.value) || 1920);
+            
+            // Critical fix: Ensure canvas has dimensions before drawing
+            if (!croppedCanvas || croppedCanvas.width === 0 || croppedCanvas.height === 0) {
+                throw new Error("Invalid cropped canvas dimensions");
+            }
+
+            ui.wmCanvas.width = tw; 
+            ui.wmCanvas.height = th;
+            const ctx = ui.wmCanvas.getContext('2d');
             
             ctx.clearRect(0,0,tw,th);
             ctx.drawImage(croppedCanvas, 0, 0, tw, th);
 
-            const scale = parseInt(ui.logoSizeScale.value) / 100;
-            const logoW = tw * scale;
-            const padVal = parseInt(ui.logoPadding.value) / 100;
-            const mx = tw * padVal;
-            const my = th * padVal;
-            const pos = ui.logoPos.value;
+            if (logoImg.complete && logoImg.naturalWidth > 0) {
+                const scale = parseInt(ui.logoSizeScale.value) / 100;
+                const logoW = tw * scale;
+                const fh = (logoW / logoImg.naturalWidth) * logoImg.naturalHeight;
+                const mx = tw * 0.05;
+                const my = th * 0.05;
+                const pos = ui.logoPos.value;
 
-            if (logoImg.complete) {
-                const fh = (logoW / logoImg.width) * logoImg.height;
                 let x, y;
                 if (pos === 'bottom-right') { x = tw - logoW - mx; y = th - fh - my; }
                 else if (pos === 'bottom-left') { x = mx; y = th - fh - my; }
@@ -442,22 +301,19 @@
                 else if (pos === 'top-left') { x = mx; y = my; }
                 else { x = (tw - logoW) / 2; y = (th - fh) / 2; }
 
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = logoImg.width;
-                tempCanvas.height = logoImg.height;
-                const tCtx = tempCanvas.getContext('2d');
-                tCtx.drawImage(logoImg, 0, 0);
+                // Create offscreen for logo styling
+                const logoCanvas = document.createElement('canvas');
+                logoCanvas.width = logoImg.naturalWidth;
+                logoCanvas.height = logoImg.naturalHeight;
+                const lCtx = logoCanvas.getContext('2d');
+                lCtx.drawImage(logoImg, 0, 0);
 
-                if (selectedLogoMode === 'white') {
-                    tCtx.globalCompositeOperation = 'source-in';
-                    tCtx.fillStyle = '#ffffff';
-                    tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                } else if (selectedLogoMode === 'black') {
-                    tCtx.globalCompositeOperation = 'source-in';
-                    tCtx.fillStyle = '#000000';
-                    tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                if (selectedLogoMode === 'white' || selectedLogoMode === 'black') {
+                    lCtx.globalCompositeOperation = 'source-in';
+                    lCtx.fillStyle = selectedLogoMode === 'white' ? '#ffffff' : '#000000';
+                    lCtx.fillRect(0, 0, logoCanvas.width, logoCanvas.height);
                 }
-                ctx.drawImage(tempCanvas, x, y, logoW, fh);
+                ctx.drawImage(logoCanvas, x, y, logoW, fh);
             }
             return new Promise(r => ui.wmCanvas.toBlob(b => r(b), 'image/jpeg', 0.95));
         }
@@ -466,32 +322,32 @@
             if (!cropper || ui.nextCropBtn.disabled) return;
             
             ui.nextBtnText.classList.add('hidden');
-            ui.nextIcon.classList.add('hidden');
             ui.loader.classList.remove('hidden');
             ui.nextCropBtn.disabled = true;
 
             try {
+                const tw = Math.max(100, parseInt(ui.targetWidth.value) || 1080);
+                const th = Math.max(100, parseInt(ui.targetHeight.value) || 1920);
+                
                 const canvas = cropper.getCroppedCanvas({ 
-                    width: parseInt(ui.targetWidth.value), 
-                    height: parseInt(ui.targetHeight.value),
+                    width: tw, 
+                    height: th,
                     imageSmoothingQuality: 'high'
                 });
-                const blob = await processAndSave(canvas);
-                
-                croppedImagesBlobs = croppedImagesBlobs.filter(i => i.originalIndex !== currentIndex);
-                croppedImagesBlobs.push({ 
-                    blob, 
-                    fileName: `${selectedFiles[currentIndex].name.split('.')[0]}_branded.jpg`,
-                    originalIndex: currentIndex
-                });
-                
-                currentIndex++;
-                loadCurrentImage();
+
+                if (canvas) {
+                    const blob = await processAndSave(canvas);
+                    croppedImagesBlobs.push({ 
+                        blob, 
+                        fileName: `cropped_${currentIndex + 1}.jpg`
+                    });
+                    currentIndex++;
+                    loadCurrentImage();
+                }
             } catch (err) {
-                console.error(err);
+                console.error("Processing Error:", err);
             } finally {
                 ui.nextBtnText.classList.remove('hidden');
-                ui.nextIcon.classList.remove('hidden');
                 ui.loader.classList.add('hidden');
                 ui.nextCropBtn.disabled = false;
             }
@@ -500,34 +356,16 @@
         ui.prevBtn.addEventListener('click', () => {
             if (currentIndex > 0) {
                 currentIndex--;
+                croppedImagesBlobs.pop();
                 loadCurrentImage();
             }
-        });
-
-        ui.skipBtn.addEventListener('click', () => { 
-            currentIndex++; 
-            loadCurrentImage(); 
-        });
-
-        ui.resetCropBtn.addEventListener('click', () => cropper && cropper.reset());
-
-        [ui.targetWidth, ui.targetHeight].forEach(el => {
-            el.addEventListener('input', () => {
-                updateRatioInfo();
-            });
-        });
-
-        [ui.logoSizeScale, ui.logoPos, ui.logoPadding].forEach(el => {
-            el.addEventListener('input', () => {
-                updateLivePreview();
-            });
         });
 
         function finishCropping() {
             ui.mainSection.classList.add('hidden');
             ui.resultSection.classList.remove('hidden');
-            ui.downloadBtnText.textContent = croppedImagesBlobs.length === 1 ? "Download Image" : `Download Zip (${croppedImagesBlobs.length})`;
             ui.processedCount.textContent = `${croppedImagesBlobs.length} images ready.`;
+            ui.downloadBtnText.textContent = croppedImagesBlobs.length === 1 ? "Download Image" : "Download Zip";
         }
 
         ui.downloadBtn.addEventListener('click', async () => {
@@ -538,14 +376,21 @@
                 const zip = new JSZip();
                 croppedImagesBlobs.forEach(i => zip.file(i.fileName, i.blob));
                 const zipBlob = await zip.generateAsync({ type: "blob" });
-                saveAs(zipBlob, `Batch_Export_${Date.now()}.zip`);
+                saveAs(zipBlob, "batch_crops.zip");
             }
         });
 
-        window.onload = () => {
-            updateLivePreview();
-            updateRatioInfo();
-        };
+        [ui.targetWidth, ui.targetHeight, ui.logoSizeScale, ui.logoPos].forEach(el => {
+            el.addEventListener('input', () => {
+                const w = parseInt(ui.targetWidth.value) || 1080;
+                const h = parseInt(ui.targetHeight.value) || 1920;
+                ui.ratioDisplay.textContent = `${w}:${h} PREVIEW`;
+                if (cropper) cropper.setAspectRatio(w / h);
+                updateLivePreview();
+            });
+        });
+
+        window.onload = updateLivePreview;
     </script>
 </body>
 </html>
