@@ -256,8 +256,8 @@
                 ui.imageToCrop.src = e.target.result;
                 if (cropper) cropper.destroy();
                 
-                const w = Math.max(100, parseInt(ui.targetWidth.value) || 1080);
-                const h = Math.max(100, parseInt(ui.targetHeight.value) || 1920);
+                const w = Math.max(100, parseInt(ui.targetWidth.value) || 1440);
+                const h = Math.max(100, parseInt(ui.targetHeight.value) || 2569);
 
                 cropper = new Cropper(ui.imageToCrop, {
                     aspectRatio: w / h,
@@ -271,8 +271,8 @@
         }
 
         async function processAndSave(croppedCanvas) {
-            const tw = Math.max(100, parseInt(ui.targetWidth.value) || 1080);
-            const th = Math.max(100, parseInt(ui.targetHeight.value) || 1920);
+            const tw = Math.max(100, parseInt(ui.targetWidth.value) || 1440);
+            const th = Math.max(100, parseInt(ui.targetHeight.value) || 2569);
             
             // Critical fix: Ensure canvas has dimensions before drawing
             if (!croppedCanvas || croppedCanvas.width === 0 || croppedCanvas.height === 0) {
@@ -326,8 +326,8 @@
             ui.nextCropBtn.disabled = true;
 
             try {
-                const tw = Math.max(100, parseInt(ui.targetWidth.value) || 1080);
-                const th = Math.max(100, parseInt(ui.targetHeight.value) || 1920);
+                const tw = Math.max(100, parseInt(ui.targetWidth.value) || 1440);
+                const th = Math.max(100, parseInt(ui.targetHeight.value) || 2569);
                 
                 const canvas = cropper.getCroppedCanvas({ 
                     width: tw, 
@@ -382,8 +382,8 @@
 
         [ui.targetWidth, ui.targetHeight, ui.logoSizeScale, ui.logoPos].forEach(el => {
             el.addEventListener('input', () => {
-                const w = parseInt(ui.targetWidth.value) || 1080;
-                const h = parseInt(ui.targetHeight.value) || 1920;
+                const w = parseInt(ui.targetWidth.value) || 1440;
+                const h = parseInt(ui.targetHeight.value) || 2569;
                 ui.ratioDisplay.textContent = `${w}:${h} PREVIEW`;
                 if (cropper) cropper.setAspectRatio(w / h);
                 updateLivePreview();
